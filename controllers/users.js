@@ -5,7 +5,12 @@ const readFile = require('../utils/read_file');
 const jsonDataPath = path.join(__dirname, '..', 'data', 'users.json');
 
 const getUsers = (req, res) => {
-  readFile(jsonDataPath).then((data) => res.send(data));
+  readFile(jsonDataPath)
+    .then((data) => res.send(data))
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ error: 'Ошибка на сервере' });
+    });
 };
 
 const getUser = (req, res) => {
@@ -20,6 +25,10 @@ const getUser = (req, res) => {
         return res.status(404).send({ message: 'Нет пользователя с таким id' });
       }
       res.send(user);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ error: 'Ошибка на сервере' });
     });
 };
 
