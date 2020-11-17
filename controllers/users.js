@@ -1,38 +1,47 @@
 /* eslint-disable consistent-return */
-const path = require('path');
-const readFile = require('../utils/read_file');
-
-const jsonDataPath = path.join(__dirname, '..', 'data', 'users.json');
+const User = require('../models/user');
 
 const getUsers = (req, res) => {
-  readFile(jsonDataPath)
-    .then((data) => res.send(data))
+  User.find({})
+    .then((users) => {
+      res.status(200).send({ users });
+    })
     .catch((err) => {
       console.log(err);
-      res.status(500).send({ error: 'Ошибка на сервере' });
+      res.status(500).send({ message: 'Ошибка на сервере' });
     });
 };
 
 const getUser = (req, res) => {
-  const { id } = req.params;
-  readFile(jsonDataPath)
-    .then((data) => {
-      const userId = data.find((user) => user._id === id);
-      return userId;
-    })
+  User.findById(req.params.id)
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Нет пользователя с таким id' });
+        return res.status(404).send({ message: 'Пользователь с таким id не найден' });
       }
-      res.send(user);
+      res.status(200).send(user);
     })
     .catch((err) => {
-      console.log(err);
-      res.status(500).send({ error: 'Ошибка на сервере' });
+      if (err.name === 'CastError') {
+        return res.status(400).send({ message: 'Переданы некорректные данные' });
+      }
+      return res.status(500).send({ message: 'Ошибка на сервере' });
+    });
+};
+
+const createUser = (req, res) => {
+  const { name, about, avatar } = req.body;
+  User.create({ name, about, avatar })
+    .then((user) => res.status(200).send(user))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({ message: 'Переданы некорректные данные' });
+      }
+      return res.status(500).send({ message: 'Ошибка на сервере' });
     });
 };
 
 module.exports = {
   getUsers,
   getUser,
+  createUser,
 };

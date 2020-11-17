@@ -1,17 +1,48 @@
-const path = require('path');
-const readFile = require('../utils/read_file');
-
-const jsonDataPath = path.join(__dirname, '..', 'data', 'cards.json');
+const Card = require('../models/card');
 
 const getCards = (req, res) => {
-  readFile(jsonDataPath)
-    .then((data) => res.send(data))
+  Card.find({})
+    .then((cards) => {
+      res.status(200).send({ cards });
+    })
     .catch((err) => {
       console.log(err);
-      res.status(500).send({ error: 'Ошибка на сервере' });
+      res.status(500).send({ message: 'Ошибка на сервере' });
+    });
+};
+
+const createCard = (req, res) => {
+  const { name, link } = req.body;
+  const owner = req.user._id;
+  Card.create({ name, link, owner })
+    .then((card) => res.status(200).send(card))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({ message: 'Переданы некорректные данные' });
+      }
+      return res.status(500).send({ message: 'Ошибка на сервере' });
+    });
+};
+
+const deleteCard = (req, res) => {
+  Card.findByIdAndRemove(req.params.id)
+    .then((card) => {
+      if (!card) {
+        return res.status(404).send({ message: 'Карточка с таким id не найдена' });
+      }
+      return res.status(200).send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Переданы некорректные данные' });
+      } else {
+        res.status(500).send({ message: 'Ошибка сервера' });
+      }
     });
 };
 
 module.exports = {
   getCards,
+  createCard,
+  deleteCard,
 };
